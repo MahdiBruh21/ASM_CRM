@@ -2,18 +2,17 @@ package com.example.crm.model;
 
 import com.example.crm.enums.ProspectStatus;
 import com.example.crm.enums.ProspectionType;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import java.util.Set;
 
 @Entity
 public class Prospect {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne
-    @JoinColumn(name = "profile_id", nullable = false)
-    private Profile profile;
-
+    private String name;
+    private String email;
     @Enumerated(EnumType.STRING)
     private ProspectStatus prospectStatus;
 
@@ -21,6 +20,10 @@ public class Prospect {
     private ProspectionType prospectionType;
 
     private String prospectDetails;
+
+    @OneToMany(mappedBy = "prospect", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private Set<Prospection> prospections;
 
     public Long getId() {
         return id;
@@ -30,12 +33,12 @@ public class Prospect {
         this.id = id;
     }
 
-    public Profile getProfile() {
-        return profile;
+    public String getEmail() {
+        return email;
     }
 
-    public void setProfile(Profile profile) {
-        this.profile = profile;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public ProspectStatus getProspectStatus() {
@@ -44,6 +47,14 @@ public class Prospect {
 
     public void setProspectStatus(ProspectStatus prospectStatus) {
         this.prospectStatus = prospectStatus;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public ProspectionType getProspectionType() {
@@ -60,5 +71,13 @@ public class Prospect {
 
     public void setProspectDetails(String prospectDetails) {
         this.prospectDetails = prospectDetails;
+    }
+
+    public Set<Prospection> getProspections() {
+        return prospections;
+    }
+
+    public void setProspections(Set<Prospection> prospections) {
+        this.prospections = prospections;
     }
 }

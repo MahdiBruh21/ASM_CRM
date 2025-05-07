@@ -1,23 +1,20 @@
 package com.example.crm.model;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import java.util.Set;
 
 @Entity
 public class Profile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String facebookLink;
     private String instagramLink;
+    @OneToOne
+    @JoinColumn(name = "customer_id")
+    @JsonBackReference(value = "customer-profile")
+    private Customer customer;
 
-    @OneToMany(mappedBy = "profile")
-    @JsonManagedReference
-    private Set<Customer> customers;
-
-    // Getters and setters
     public Long getId() {
         return id;
     }
@@ -42,11 +39,11 @@ public class Profile {
         this.instagramLink = instagramLink;
     }
 
-    public Set<Customer> getCustomers() {
-        return customers;
+    public Customer getCustomer() {
+        return customer;
     }
 
-    public void setCustomers(Set<Customer> customers) {
-        this.customers = customers;
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
     }
 }

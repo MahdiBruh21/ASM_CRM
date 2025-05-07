@@ -1,36 +1,48 @@
 package com.example.crm.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
-
 import java.util.Set;
 
 @Entity
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id")
 public class Customer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "profile_id", nullable = false)
-    @JsonBackReference(value = "profile-customer")
-    private Profile profile;
-
+    private String name;
+    private String email;
     private String address;
     private String customerType;
+    private String phone;
+
+    @Column(name = "lead_source_prospect_id")
+    private Long leadSourceProspectId;
+
+    @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Profile profile;
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference(value = "customer-complaint")
     private Set<Complaint> complaints;
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference(value = "customer-order")
     private Set<Order> orders;
 
-    private String phone;  // Used for both general phone and WhatsApp
+    public Customer() {
+        this.profile = new Profile();
+        this.profile.setCustomer(this);
+    }
 
-    // Getters and setters
+    public Customer(String name, String email) {
+        this();
+        this.name = name;
+        this.email = email;
+    }
+
     public Long getId() {
         return id;
     }
@@ -39,12 +51,20 @@ public class Customer {
         this.id = id;
     }
 
-    public Profile getProfile() {
-        return profile;
+    public String getName() {
+        return name;
     }
 
-    public void setProfile(Profile profile) {
-        this.profile = profile;
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getAddress() {
@@ -63,6 +83,33 @@ public class Customer {
         this.customerType = customerType;
     }
 
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public Long getLeadSourceProspectId() {
+        return leadSourceProspectId;
+    }
+
+    public void setLeadSourceProspectId(Long leadSourceProspectId) {
+        this.leadSourceProspectId = leadSourceProspectId;
+    }
+
+    public Profile getProfile() {
+        return profile;
+    }
+
+    public void setProfile(Profile profile) {
+        this.profile = profile;
+        if (profile != null) {
+            profile.setCustomer(this);
+        }
+    }
+
     public Set<Complaint> getComplaints() {
         return complaints;
     }
@@ -78,13 +125,4 @@ public class Customer {
     public void setOrders(Set<Order> orders) {
         this.orders = orders;
     }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
 }
-

@@ -1,6 +1,7 @@
 package com.example.crm.model;
 
 import com.example.crm.enums.ProspectionStatus;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 @Entity
@@ -11,6 +12,7 @@ public class Prospection {
 
     @ManyToOne
     @JoinColumn(name = "prospect_id", nullable = false)
+    @JsonBackReference
     private Prospect prospect;
 
     @Enumerated(EnumType.STRING)

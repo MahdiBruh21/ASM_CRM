@@ -2,10 +2,15 @@ package com.example.crm.model;
 
 import com.example.crm.enums.ComplaintType;
 import com.example.crm.enums.ComplaintStatus;
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 
 @Entity
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id"
+)
 public class Complaint {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -13,7 +18,6 @@ public class Complaint {
 
     @ManyToOne
     @JoinColumn(name = "customer_id", nullable = false)
-    @JsonBackReference(value = "customer-complaint")
     private Customer customer;
 
     @Enumerated(EnumType.STRING)
