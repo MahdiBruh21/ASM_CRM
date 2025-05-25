@@ -9,6 +9,7 @@ public class MessageDTO {
     private String senderId;
     private String recipientId;
     private String messageText;
+    private String buttonPayload;
     private LocalDateTime timestamp;
     private CustomerDTO customer;
 
@@ -22,6 +23,8 @@ public class MessageDTO {
     public void setRecipientId(String recipientId) { this.recipientId = recipientId; }
     public String getMessageText() { return messageText; }
     public void setMessageText(String messageText) { this.messageText = messageText; }
+    public String getButtonPayload() { return buttonPayload; }
+    public void setButtonPayload(String buttonPayload) { this.buttonPayload = buttonPayload; }
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
     public CustomerDTO getCustomer() { return customer; }

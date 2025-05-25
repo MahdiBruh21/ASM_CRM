@@ -4,6 +4,7 @@ import com.example.crm.dto.MessageDTO;
 import java.util.List;
 
 public interface MessageService {
-    void processWebhookPayload(String payload);
+    void processWebhookPayload(String payload, String platform);
+    void sendMessage(String recipientId, String messageText, String quickReplies, String platform);
     List<MessageDTO> getAllMessages();
 }
