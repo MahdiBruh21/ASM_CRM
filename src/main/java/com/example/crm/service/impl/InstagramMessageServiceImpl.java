@@ -46,6 +46,9 @@ public class InstagramMessageServiceImpl implements MessageService {
     @Value("${instagram.access.token}")
     private String instagramAccessToken;
 
+    @Value("${meta.page.access.token}")
+    private String pageAccessToken;
+
     @Value("${meta.api.version}")
     private String metaApiVersion;
 
@@ -142,17 +145,18 @@ public class InstagramMessageServiceImpl implements MessageService {
     private Prospect createOrUpdateProspect(String senderId) {
         Optional<ProspectProfile> existingProfile = prospectProfileRepository.findBySenderId(senderId);
         if (existingProfile.isPresent()) {
+            System.out.println("Instagram: Found existing ProspectProfile for senderId=" + senderId);
             return existingProfile.get().getProspect();
         }
 
         String name = "Unknown";
-        String profileLink = "https://www.instagram.com/user/" + senderId;
+        String profileLink = "https://www.instagram.com/user/" + senderId; // Fallback link
 
         try {
-            String url = String.format("https://graph.instagram.com/%s?fields=id,username,account_type&access_token=%s",
-                    senderId, instagramAccessToken);
+            String url = String.format("https://graph.facebook.com/%s/%s?fields=username&access_token=%s",
+                    metaApiVersion, senderId, pageAccessToken);
             HttpGet request = new HttpGet(url);
-            System.out.println("Instagram: Fetching sender details for senderId=" + senderId + " with token (redacted): " + instagramAccessToken.substring(0, 10) + "...");
+            System.out.println("Instagram: Fetching sender details for senderId=" + senderId + " with token (redacted): " + pageAccessToken.substring(0, 10) + "...");
             try (CloseableHttpResponse response = httpClient.execute(request)) {
                 int statusCode = response.getStatusLine().getStatusCode();
                 String responseBody = EntityUtils.toString(response.getEntity());
@@ -161,14 +165,35 @@ public class InstagramMessageServiceImpl implements MessageService {
                     JsonNode node = objectMapper.readTree(responseBody);
                     if (node.has("username")) {
                         name = node.get("username").asText();
-                        profileLink = "https://www.instagram.com/" + name;
+                        profileLink = "https://www.instagram.com/" + name + "/";
+                        System.out.println("Instagram: Fetched username: " + name);
+                    } else {
+                        System.err.println("Instagram: No username in response for senderId=" + senderId + ": " + responseBody);
+                    }
+                } else if (statusCode == 429) {
+                    System.err.println("Instagram: Rate limit exceeded for senderId=" + senderId + ". Retrying after delay...");
+                    Thread.sleep(1000); // Wait 1 second
+                    try (CloseableHttpResponse retryResponse = httpClient.execute(new HttpGet(url))) {
+                        int retryStatusCode = retryResponse.getStatusLine().getStatusCode();
+                        String retryResponseBody = EntityUtils.toString(retryResponse.getEntity());
+                        System.out.println("Instagram: Retry response (status " + retryStatusCode + "): " + retryResponseBody);
+                        if (retryStatusCode == 200) {
+                            JsonNode node = objectMapper.readTree(retryResponseBody);
+                            if (node.has("username")) {
+                                name = node.get("username").asText();
+                                profileLink = "https://www.instagram.com/" + name + "/";
+                                System.out.println("Instagram: Fetched username on retry: " + name);
+                            }
+                        } else {
+                            System.err.println("Instagram: Retry failed for senderId=" + senderId + ", status: " + retryStatusCode + ", response: " + retryResponseBody);
+                        }
                     }
                 } else {
                     System.err.println("Instagram: Failed to fetch sender details for senderId=" + senderId + ", status: " + statusCode + ", response: " + responseBody);
                 }
             }
         } catch (Exception e) {
-            System.err.println("Instagram: Failed to fetch sender details for senderId=" + senderId + ": " + e.getMessage());
+            System.err.println("Instagram: Error fetching sender details for senderId=" + senderId + ": " + e.getMessage());
             e.printStackTrace();
         }
 
@@ -186,7 +211,7 @@ public class InstagramMessageServiceImpl implements MessageService {
         profile.setProspect(prospect);
         prospectProfileRepository.save(profile);
 
-        System.out.println("Instagram: Created Prospect: " + name + ", Sender ID: " + senderId);
+        System.out.println("Instagram: Created Prospect: " + name + ", Sender ID: " + senderId + ", Profile Link: " + profileLink);
         return prospect;
     }
 
