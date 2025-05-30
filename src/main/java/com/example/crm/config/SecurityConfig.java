@@ -1,8 +1,8 @@
 package com.example.crm.config;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -14,12 +14,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.client.endpoint.DefaultAuthorizationCodeTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
-import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
-import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
@@ -49,8 +45,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
-                        // Fix max sessions: configure through sessionManagement().maximumSessions()
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                         .maximumSessions(1)
                         .maxSessionsPreventsLogin(false)
                         .expiredUrl("http://localhost:4200/login?session_expired=true")
@@ -64,7 +59,8 @@ public class SecurityConfig {
                                 "/proxy/**",
                                 "/api/webhook",
                                 "/login/oauth2/code/**",
-                                "/oauth2/**"
+                                "/oauth2/**",
+                                "/logout"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -87,15 +83,16 @@ public class SecurityConfig {
                         )
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService)
-                                .oidcUserService(oidcUserService())
                         )
                         .successHandler((request, response, authentication) -> {
-                            // Create session if not exists
-                            request.getSession(true);
-                            // Set CORS headers for frontend
+                            HttpSession session = request.getSession(false);
+                            if (session == null) {
+                                logger.info("No session created during login success");
+                                session = request.getSession(true);
+                            }
+                            session.setMaxInactiveInterval(1800); // 30 minutes
                             response.setHeader("Access-Control-Allow-Origin", "http://localhost:4200");
                             response.setHeader("Access-Control-Allow-Credentials", "true");
-                            // Redirect on success
                             response.sendRedirect("http://localhost:4200/customers");
                         })
                         .failureHandler((request, response, exception) -> {
@@ -106,12 +103,29 @@ public class SecurityConfig {
                         })
                 )
                 .logout(logout -> logout
+                        .logoutUrl("/logout")
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)
-                        // Delete JSESSIONID and your custom OAuth2 authorization request cookie
                         .deleteCookies("JSESSIONID", "OAUTH2_AUTHORIZATION_REQUEST", "REDIRECT_URI")
                         .addLogoutHandler((request, response, authentication) -> {
+                            logger.info("Logout handler: Starting logout process");
+                            HttpSession session = request.getSession(false);
+                            if (session != null) {
+                                logger.info("Invalidating session: " + session.getId());
+                                session.invalidate();
+                            } else {
+                                logger.info("No session found to invalidate");
+                            }
                             cookieAuthorizationRequestRepository().removeAuthorizationRequest(request, response);
+                            response.addHeader("Set-Cookie",
+                                    "JSESSIONID=; Path=/; Domain=localhost; Max-Age=0; HttpOnly; SameSite=Lax");
+                            response.addHeader("Set-Cookie",
+                                    "JSESSIONID=; Path=/api; Domain=localhost; Max-Age=0; HttpOnly; SameSite=Lax");
+                            response.addHeader("Set-Cookie",
+                                    "OAUTH2_AUTHORIZATION_REQUEST=; Path=/; Domain=localhost; Max-Age=0; HttpOnly; SameSite=Lax");
+                            response.addHeader("Set-Cookie",
+                                    "REDIRECT_URI=; Path=/; Domain=localhost; Max-Age=0; HttpOnly; SameSite=Lax");
+                            logger.info("Logout handler: Sent Set-Cookie headers to clear JSESSIONID and OAuth cookies");
                         })
                         .logoutSuccessHandler(keycloakLogoutSuccessHandler())
                 );
@@ -121,38 +135,29 @@ public class SecurityConfig {
 
     @Bean
     public LogoutSuccessHandler keycloakLogoutSuccessHandler() {
-        return new LogoutSuccessHandler() {
-            private final String keycloakLogoutEndpoint = "http://localhost:8081/realms/SphynxRealm/protocol/openid-connect/logout";
-            private final String postLogoutRedirectUri = "http://localhost:4200/login?logout=true";
+        return (request, response, authentication) -> {
+            logger.info("LogoutSuccessHandler: Performing Keycloak logout");
+            response.addHeader("Set-Cookie",
+                    "JSESSIONID=; Path=/; Domain=localhost; Max-Age=0; HttpOnly; SameSite=Lax");
+            response.addHeader("Set-Cookie",
+                    "JSESSIONID=; Path=/api; Domain=localhost; Max-Age=0; HttpOnly; SameSite=Lax");
+            response.addHeader("Set-Cookie",
+                    "OAUTH2_AUTHORIZATION_REQUEST=; Path=/; Domain=localhost; Max-Age=0; HttpOnly; SameSite=Lax");
+            response.addHeader("Set-Cookie",
+                    "REDIRECT_URI=; Path=/; Domain=localhost; Max-Age=0; HttpOnly; SameSite=Lax");
+            logger.info("LogoutSuccessHandler: Sent final Set-Cookie headers");
 
-            @Override
-            public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response,
-                                        org.springframework.security.core.Authentication authentication)
-                    throws IOException, ServletException {
+            String redirectUri = URLEncoder.encode(
+                    "http://localhost:4200/logout-frontchannel",
+                    StandardCharsets.UTF_8
+            );
+            String logoutUrl = "http://localhost:8081/realms/SphynxRealm/protocol/openid-connect/logout" +
+                    "?client_id=SphynxApp" +
+                    "&post_logout_redirect_uri=" + redirectUri;
 
-                // Invalidate session if exists
-                if (request.getSession(false) != null) {
-                    request.getSession().invalidate();
-                }
-
-                // Redirect URL for Keycloak logout with redirect_uri param
-                String logoutUrl = keycloakLogoutEndpoint + "?redirect_uri=" +
-                        URLEncoder.encode(postLogoutRedirectUri, StandardCharsets.UTF_8);
-
-                // Set CORS headers for frontend
-                response.setHeader("Access-Control-Allow-Origin", "http://localhost:4200");
-                response.setHeader("Access-Control-Allow-Credentials", "true");
-
-                // Redirect user to Keycloak logout endpoint
-                response.sendRedirect(logoutUrl);
-            }
+            logger.info("Redirecting to Keycloak logout: " + logoutUrl);
+            response.sendRedirect(logoutUrl);
         };
-    }
-
-    @Bean
-    public OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService() {
-        // Use default OidcUserService delegate
-        return new OidcUserService();
     }
 
     @Bean
