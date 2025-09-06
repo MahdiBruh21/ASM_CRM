@@ -7,6 +7,8 @@ public class ProspectDTO {
     private Long id;
     private String name;
     private String email;
+    private String phoneNumber;
+
     private ProspectStatus prospectStatus;
     private ProspectionType prospectionType;
     private String prospectDetails;
@@ -17,6 +19,8 @@ public class ProspectDTO {
     public void setName(String name) { this.name = name; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+    public String getPhoneNumber() { return phoneNumber;}
+    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
     public ProspectStatus getProspectStatus() { return prospectStatus; }
     public void setProspectStatus(ProspectStatus prospectStatus) { this.prospectStatus = prospectStatus; }
     public ProspectionType getProspectionType() { return prospectionType; }

@@ -26,9 +26,9 @@ public class WebhookController {
     private String verifyToken;
 
     public WebhookController(
-            @Qualifier("whatsAppMessageServiceImpl") MessageService whatsappMessageService,
-            @Qualifier("instagramMessageServiceImpl") MessageService instagramMessageService,
-            @Qualifier("facebookMessageServiceImpl") MessageService facebookMessageService,
+            @Qualifier("whatsappMessageService") MessageService whatsappMessageService,
+            @Qualifier("instagramMessageService") MessageService instagramMessageService,
+            @Qualifier("facebookMessageService") MessageService facebookMessageService,
             ObjectMapper objectMapper) {
         this.whatsappMessageService = whatsappMessageService;
         this.instagramMessageService = instagramMessageService;

@@ -15,6 +15,7 @@ public class Message {
 
     private String senderId;
     private String recipientId;
+    private String sessionId; // New field for bidirectional session ID
     private String messageText;
     private String buttonPayload;
     private LocalDateTime timestamp;
@@ -31,6 +32,8 @@ public class Message {
     public void setSenderId(String senderId) { this.senderId = senderId; }
     public String getRecipientId() { return recipientId; }
     public void setRecipientId(String recipientId) { this.recipientId = recipientId; }
+    public String getSessionId() { return sessionId; }
+    public void setSessionId(String sessionId) { this.sessionId = sessionId; }
     public String getMessageText() { return messageText; }
     public void setMessageText(String messageText) { this.messageText = messageText; }
     public String getButtonPayload() { return buttonPayload; }

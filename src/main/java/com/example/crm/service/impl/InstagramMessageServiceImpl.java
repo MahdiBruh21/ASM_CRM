@@ -1,5 +1,6 @@
 package com.example.crm.service.impl;
 
+import com.example.crm.config.RabbitMQConfig;
 import com.example.crm.dto.CustomerDTO;
 import com.example.crm.dto.MessageDTO;
 import com.example.crm.enums.Platform;
@@ -23,6 +24,8 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +36,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Service
+@Service("instagramMessageService")
 public class InstagramMessageServiceImpl implements MessageService {
 
     private final MessageRepository messageRepository;
@@ -42,6 +45,7 @@ public class InstagramMessageServiceImpl implements MessageService {
     private final ProspectProfileRepository prospectProfileRepository;
     private final ObjectMapper objectMapper;
     private final CloseableHttpClient httpClient;
+    private final RabbitTemplate rabbitTemplate;
 
     @Value("${instagram.access.token}")
     private String instagramAccessToken;
@@ -54,13 +58,14 @@ public class InstagramMessageServiceImpl implements MessageService {
 
     public InstagramMessageServiceImpl(MessageRepository messageRepository, CustomerRepository customerRepository,
                                        ProspectRepository prospectRepository, ProspectProfileRepository prospectProfileRepository,
-                                       ObjectMapper objectMapper) {
+                                       ObjectMapper objectMapper, RabbitTemplate rabbitTemplate) {
         this.messageRepository = messageRepository;
         this.customerRepository = customerRepository;
         this.prospectRepository = prospectRepository;
         this.prospectProfileRepository = prospectProfileRepository;
         this.objectMapper = objectMapper;
         this.httpClient = HttpClients.createDefault();
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     @Override
@@ -106,11 +111,14 @@ public class InstagramMessageServiceImpl implements MessageService {
 
                     System.out.println("Instagram: Processing message: senderId=" + senderId + ", recipientId=" + recipientId + ", messageNode=" + messageNode.toPrettyString());
 
+                    String sessionId = generateSessionId(senderId, recipientId);
+
                     Prospect prospect = createOrUpdateProspect(senderId);
                     Message message = new Message();
                     message.setPlatform(Platform.INSTAGRAM);
                     message.setSenderId(senderId);
                     message.setRecipientId(recipientId);
+                    message.setSessionId(sessionId);
                     message.setTimestamp(LocalDateTime.now());
 
                     String text = null;
@@ -129,10 +137,8 @@ public class InstagramMessageServiceImpl implements MessageService {
                     Optional<Customer> customer = findCustomerBySenderId(senderId);
                     customer.ifPresent(message::setCustomer);
 
-                    messageRepository.save(message);
-                    System.out.println("Instagram: Saved message: " + message.getMessageText());
-
-                    handleInteraction(message);
+                    rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.INSTAGRAM_ROUTING_KEY, objectMapper.writeValueAsString(message));
+                    System.out.println("Instagram: Published message to RabbitMQ: " + message.getMessageText());
                 }
             }
         } catch (Exception e) {
@@ -140,6 +146,12 @@ public class InstagramMessageServiceImpl implements MessageService {
             e.printStackTrace();
             throw new IllegalArgumentException("Instagram: Failed to process payload: " + e.getMessage(), e);
         }
+    }
+
+    private String generateSessionId(String senderId, String recipientId) {
+        String id1 = senderId.compareTo(recipientId) < 0 ? senderId : recipientId;
+        String id2 = senderId.compareTo(recipientId) < 0 ? recipientId : senderId;
+        return Platform.INSTAGRAM + ":" + id1 + ":" + id2;
     }
 
     private Prospect createOrUpdateProspect(String senderId) {
@@ -150,7 +162,7 @@ public class InstagramMessageServiceImpl implements MessageService {
         }
 
         String name = "Unknown";
-        String profileLink = "https://www.instagram.com/user/" + senderId; // Fallback link
+        String profileLink = "https://www.instagram.com/user/" + senderId;
 
         try {
             String url = String.format("https://graph.facebook.com/%s/%s?fields=username&access_token=%s",
@@ -172,7 +184,7 @@ public class InstagramMessageServiceImpl implements MessageService {
                     }
                 } else if (statusCode == 429) {
                     System.err.println("Instagram: Rate limit exceeded for senderId=" + senderId + ". Retrying after delay...");
-                    Thread.sleep(1000); // Wait 1 second
+                    Thread.sleep(1000);
                     try (CloseableHttpResponse retryResponse = httpClient.execute(new HttpGet(url))) {
                         int retryStatusCode = retryResponse.getStatusLine().getStatusCode();
                         String retryResponseBody = EntityUtils.toString(retryResponse.getEntity());
@@ -215,13 +227,9 @@ public class InstagramMessageServiceImpl implements MessageService {
         return prospect;
     }
 
-    private void handleInteraction(Message message) {
-        String responseText = "مرحبا! Bienvenue! Welcome! Thank you for your message. How can we assist you?";
-        sendMessage(message.getSenderId(), responseText, null, Platform.INSTAGRAM.name());
-    }
-
     @Override
-    public void sendMessage(String recipientId, String messageText, String quickReplies, String platform) {
+    @Transactional
+    public void sendMessage(String recipientId, String messageText, String quickReplies, String platform, String sessionId) {
         if (!Platform.INSTAGRAM.name().equalsIgnoreCase(platform)) {
             return;
         }
@@ -248,6 +256,16 @@ public class InstagramMessageServiceImpl implements MessageService {
                 System.out.println("Instagram: Meta API response (status " + statusCode + "): " + responseBody);
                 if (statusCode != 200) {
                     System.err.println("Instagram: Meta API error for recipientId=" + recipientId + ": " + responseBody);
+                } else {
+                    Message message = new Message();
+                    message.setPlatform(Platform.INSTAGRAM);
+                    message.setSenderId("chatbot");
+                    message.setRecipientId(recipientId);
+                    message.setSessionId(sessionId);
+                    message.setMessageText(messageText);
+                    message.setTimestamp(LocalDateTime.now());
+                    messageRepository.save(message);
+                    System.out.println("Instagram: Saved chatbot response: " + messageText + ", sessionId=" + sessionId);
                 }
             }
         } catch (Exception e) {
@@ -277,6 +295,7 @@ public class InstagramMessageServiceImpl implements MessageService {
         dto.setPlatform(message.getPlatform());
         dto.setSenderId(message.getSenderId());
         dto.setRecipientId(message.getRecipientId());
+        dto.setSessionId(message.getSessionId());
         dto.setMessageText(message.getMessageText());
         dto.setButtonPayload(message.getButtonPayload());
         dto.setTimestamp(message.getTimestamp());

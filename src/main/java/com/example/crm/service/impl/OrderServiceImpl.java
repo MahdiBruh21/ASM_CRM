@@ -6,8 +6,10 @@ import com.example.crm.dto.CustomerDTO;
 import com.example.crm.dto.ProfileDTO;
 import com.example.crm.model.Order;
 import com.example.crm.model.Customer;
+import com.example.crm.model.Product;
 import com.example.crm.repository.OrderRepository;
 import com.example.crm.repository.CustomerRepository;
+import com.example.crm.repository.ProductRepository;
 import com.example.crm.service.interfaces.OrderService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
@@ -21,11 +23,14 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
+    private final ProductRepository productRepository;
 
     public OrderServiceImpl(OrderRepository orderRepository,
-                            CustomerRepository customerRepository) {
+                            CustomerRepository customerRepository,
+                            ProductRepository productRepository) {
         this.orderRepository = orderRepository;
         this.customerRepository = customerRepository;
+        this.productRepository = productRepository;
     }
 
     @Override
@@ -44,6 +49,14 @@ public class OrderServiceImpl implements OrderService {
         order.setOrderStatus(orderDTO.getOrderStatus());
         order.setOrderDetails(orderDTO.getOrderDetails());
 
+        if (orderDTO.getProductIds() != null && !orderDTO.getProductIds().isEmpty()) {
+            List<Product> products = productRepository.findAllById(orderDTO.getProductIds());
+            if (products.size() != orderDTO.getProductIds().size()) {
+                throw new EntityNotFoundException("One or more products not found");
+            }
+            order.setProducts(products);
+        }
+
         return orderRepository.save(order);
     }
 
@@ -61,6 +74,14 @@ public class OrderServiceImpl implements OrderService {
             Customer customer = customerRepository.findById(orderDTO.getCustomerId())
                     .orElseThrow(() -> new EntityNotFoundException("Customer not found with id: " + orderDTO.getCustomerId()));
             existingOrder.setCustomer(customer);
+        }
+
+        if (orderDTO.getProductIds() != null) {
+            List<Product> products = productRepository.findAllById(orderDTO.getProductIds());
+            if (products.size() != orderDTO.getProductIds().size()) {
+                throw new EntityNotFoundException("One or more products not found");
+            }
+            existingOrder.setProducts(products);
         }
 
         return orderRepository.save(existingOrder);
@@ -113,6 +134,13 @@ public class OrderServiceImpl implements OrderService {
                 customerDTO.setProfile(profileDTO);
             }
             dto.setCustomer(customerDTO);
+        }
+
+        if (order.getProducts() != null) {
+            List<Long> productIds = order.getProducts().stream()
+                    .map(Product::getId)
+                    .collect(Collectors.toList());
+            dto.setProductIds(productIds);
         }
 
         return dto;

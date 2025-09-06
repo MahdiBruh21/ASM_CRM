@@ -1,10 +1,13 @@
-package com.example.crm.model;
+
+        package com.example.crm.model;
 
 import com.example.crm.enums.OrderStatus;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "\"order\"")
@@ -20,13 +23,21 @@ public class Order {
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
-    private  float price;
+    private float price;
     private Date orderDate;
 
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
 
     private String orderDetails;
+
+    @OneToMany
+    @JoinTable(
+            name = "order_product",
+            joinColumns = @JoinColumn(name = "order_id"),
+            inverseJoinColumns = @JoinColumn(name = "product_id")
+    )
+    private List<Product> products = new ArrayList<>();
 
     // Getters and setters
     public Long getId() {
@@ -75,5 +86,17 @@ public class Order {
 
     public void setOrderDetails(String orderDetails) {
         this.orderDetails = orderDetails;
+    }
+
+    public List<Product> getProducts() {
+        return products;
+    }
+
+    public void setProducts(List<Product> products) {
+        this.products = products;
+    }
+
+    public void addProduct(Product product) {
+        products.add(product);
     }
 }

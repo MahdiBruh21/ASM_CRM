@@ -5,10 +5,105 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="013998f9-a585-4d20-a363-e2796dd980b2" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/scripts/populate_product_vectors.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/config/PGvectorType.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/config/RabbitMQConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/controller/ConversationSessionController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/controller/ProductController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/dto/ConversationSessionDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/dto/ProductDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/model/ConversationSession.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/model/Product.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/repository/ConversationSessionRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/repository/ProductRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/service/MessageProcessor.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/ConversationSessionServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/ProductServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/service/interfaces/ConversationSessionService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/service/interfaces/ProductService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/controller/MessageController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/controller/MessageController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/controller/WebhookController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/controller/WebhookController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/dto/MessageDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/dto/MessageDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/dto/OrderCreateDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/dto/OrderCreateDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/dto/OrderDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/dto/OrderDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/dto/ProspectCreateDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/dto/ProspectCreateDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/dto/ProspectDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/dto/ProspectDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/model/Message.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/model/Message.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/model/Order.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/model/Order.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/model/Prospect.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/model/Prospect.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/model/ProspectProfile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/model/ProspectProfile.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/repository/MessageRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/repository/MessageRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/FacebookMessageServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/FacebookMessageServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/InstagramMessageServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/InstagramMessageServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/OrderServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/OrderServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/ProspectServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/ProspectServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/WhatsAppMessageServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/WhatsAppMessageServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/service/interfaces/MessageService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/service/interfaces/MessageService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/CRMApplication.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/CRMApplication.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/controller/ComplaintController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/controller/ComplaintController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/controller/CustomerController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/controller/CustomerController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/controller/DataController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/controller/DataController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/controller/MessageController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/controller/MessageController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/controller/OrderController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/controller/OrderController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/controller/ProfileController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/controller/ProfileController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/controller/ProspectController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/controller/ProspectController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/controller/ProspectionController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/controller/ProspectionController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/controller/WebhookController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/controller/WebhookController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/dto/ComplaintCreateDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/dto/ComplaintCreateDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/dto/ComplaintDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/dto/ComplaintDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/dto/CustomerCreateDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/dto/CustomerCreateDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/dto/CustomerDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/dto/CustomerDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/dto/CustomerWithComplaintsDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/dto/CustomerWithComplaintsDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/dto/CustomerWithOrdersDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/dto/CustomerWithOrdersDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/dto/MessageDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/dto/MessageDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/dto/OrderCreateDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/dto/OrderCreateDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/dto/OrderDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/dto/OrderDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/dto/ProfileDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/dto/ProfileDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/dto/ProspectCreateDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/dto/ProspectCreateDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/dto/ProspectDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/dto/ProspectDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/dto/ProspectWithProspectionsDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/dto/ProspectWithProspectionsDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/dto/ProspectionCreateDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/dto/ProspectionCreateDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/dto/ProspectionDTO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/dto/ProspectionDTO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/enums/ComplaintStatus.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/enums/ComplaintStatus.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/enums/ComplaintType.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/enums/ComplaintType.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/enums/OrderStatus.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/enums/OrderStatus.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/enums/Platform.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/enums/Platform.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/enums/ProspectStatus.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/enums/ProspectStatus.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/enums/ProspectionStatus.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/enums/ProspectionStatus.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/enums/ProspectionType.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/enums/ProspectionType.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/model/Complaint.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/model/Complaint.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/model/Customer.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/model/Customer.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/model/Message.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/model/Message.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/model/Order.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/model/Order.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/model/Profile.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/model/Profile.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/model/Prospect.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/model/Prospect.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/model/Prospection.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/model/Prospection.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/repository/ComplaintRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/repository/ComplaintRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/repository/CustomerRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/repository/CustomerRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/repository/MessageRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/repository/MessageRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/repository/OrderRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/repository/OrderRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/repository/ProfileRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/repository/ProfileRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/repository/ProspectRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/repository/ProspectRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/repository/ProspectionRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/repository/ProspectionRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/service/impl/ComplaintServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/service/impl/ComplaintServiceImpl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/service/impl/CustomerServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/service/impl/CustomerServiceImpl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/service/impl/OrderServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/service/impl/OrderServiceImpl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/service/impl/ProfileServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/service/impl/ProfileServiceImpl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/service/impl/ProspectServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/service/impl/ProspectServiceImpl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/service/impl/ProspectionServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/service/impl/ProspectionServiceImpl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/service/interfaces/ComplaintService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/service/interfaces/ComplaintService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/service/interfaces/CustomerService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/service/interfaces/CustomerService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/service/interfaces/MessageService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/service/interfaces/MessageService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/service/interfaces/OrderService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/service/interfaces/OrderService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/service/interfaces/ProfileService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/service/interfaces/ProfileService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/service/interfaces/ProspectService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/service/interfaces/ProspectService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/service/interfaces/ProspectionService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/service/interfaces/ProspectionService.class" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -19,6 +114,7 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Enum" />
+        <option value="Interface" />
         <option value="Class" />
       </list>
     </option>
@@ -68,8 +164,8 @@
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
     &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
     &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
@@ -147,7 +243,13 @@
       <workItem from="1747223806106" duration="116143000" />
       <workItem from="1748075056311" duration="23652000" />
       <workItem from="1748697420863" duration="14972000" />
-      <workItem from="1754239386281" duration="6937000" />
+      <workItem from="1754239386281" duration="28979000" />
+      <workItem from="1755695813851" duration="36841000" />
+      <workItem from="1756393830227" duration="1602000" />
+      <workItem from="1756395581055" duration="3124000" />
+      <workItem from="1756401138909" duration="4451000" />
+      <workItem from="1756408150951" duration="16626000" />
+      <workItem from="1757002297503" duration="24605000" />
     </task>
     <servers />
   </component>

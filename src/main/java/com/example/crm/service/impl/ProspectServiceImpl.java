@@ -29,6 +29,7 @@ public class ProspectServiceImpl implements ProspectService {
         Prospect prospect = new Prospect();
         prospect.setName(prospectDTO.getName());
         prospect.setEmail(prospectDTO.getEmail());
+        prospect.setPhoneNumber(prospectDTO.getPhoneNumber());
         prospect.setProspectStatus(prospectDTO.getProspectStatus());
         prospect.setProspectionType(prospectDTO.getProspectionType());
         prospect.setProspectDetails(prospectDTO.getProspectDetails());
@@ -41,6 +42,7 @@ public class ProspectServiceImpl implements ProspectService {
         Prospect existingProspect = getProspectById(id);
         existingProspect.setName(prospectDTO.getName());
         existingProspect.setEmail(prospectDTO.getEmail());
+        existingProspect.setPhoneNumber(prospectDTO.getPhoneNumber()); // ✅ FIXED
         existingProspect.setProspectStatus(prospectDTO.getProspectStatus());
         existingProspect.setProspectionType(prospectDTO.getProspectionType());
         existingProspect.setProspectDetails(prospectDTO.getProspectDetails());
@@ -105,6 +107,8 @@ public class ProspectServiceImpl implements ProspectService {
         dto.setId(prospect.getId());
         dto.setName(prospect.getName());
         dto.setEmail(prospect.getEmail());
+        dto.setPhoneNumber(prospect.getPhoneNumber());
+
         dto.setProspectStatus(prospect.getProspectStatus());
         dto.setProspectionType(prospect.getProspectionType());
         dto.setProspectDetails(prospect.getProspectDetails());

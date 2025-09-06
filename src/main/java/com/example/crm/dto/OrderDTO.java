@@ -1,7 +1,9 @@
 package com.example.crm.dto;
 
 import com.example.crm.enums.OrderStatus;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class OrderDTO {
     private Long id;
@@ -10,6 +12,7 @@ public class OrderDTO {
     private Date orderDate;
     private OrderStatus orderStatus;
     private String orderDetails;
+    private List<Long> productIds = new ArrayList<>();
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -23,4 +26,6 @@ public class OrderDTO {
     public void setOrderStatus(OrderStatus orderStatus) { this.orderStatus = orderStatus; }
     public String getOrderDetails() { return orderDetails; }
     public void setOrderDetails(String orderDetails) { this.orderDetails = orderDetails; }
+    public List<Long> getProductIds() { return productIds; }
+    public void setProductIds(List<Long> productIds) { this.productIds = productIds; }
 }

@@ -1,4 +1,5 @@
-package com.example.crm.repository;
+
+        package com.example.crm.repository;
 
 import com.example.crm.model.Message;
 import org.springframework.data.jpa.repository.JpaRepository;

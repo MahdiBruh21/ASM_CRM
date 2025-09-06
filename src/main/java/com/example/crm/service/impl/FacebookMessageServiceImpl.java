@@ -1,5 +1,7 @@
-package com.example.crm.service.impl;
 
+        package com.example.crm.service.impl;
+
+import com.example.crm.config.RabbitMQConfig;
 import com.example.crm.dto.CustomerDTO;
 import com.example.crm.dto.MessageDTO;
 import com.example.crm.enums.Platform;
@@ -23,6 +25,8 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +37,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Service
+@Service("facebookMessageService")
 public class FacebookMessageServiceImpl implements MessageService {
 
     private final MessageRepository messageRepository;
@@ -42,6 +46,7 @@ public class FacebookMessageServiceImpl implements MessageService {
     private final ProspectProfileRepository prospectProfileRepository;
     private final ObjectMapper objectMapper;
     private final CloseableHttpClient httpClient;
+    private final RabbitTemplate rabbitTemplate;
 
     @Value("${meta.page.access.token}")
     private String pageAccessToken;
@@ -51,13 +56,14 @@ public class FacebookMessageServiceImpl implements MessageService {
 
     public FacebookMessageServiceImpl(MessageRepository messageRepository, CustomerRepository customerRepository,
                                       ProspectRepository prospectRepository, ProspectProfileRepository prospectProfileRepository,
-                                      ObjectMapper objectMapper) {
+                                      ObjectMapper objectMapper, RabbitTemplate rabbitTemplate) {
         this.messageRepository = messageRepository;
         this.customerRepository = customerRepository;
         this.prospectRepository = prospectRepository;
         this.prospectProfileRepository = prospectProfileRepository;
         this.objectMapper = objectMapper;
         this.httpClient = HttpClients.createDefault();
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     @Override
@@ -97,11 +103,14 @@ public class FacebookMessageServiceImpl implements MessageService {
 
                     System.out.println("Facebook: Processing message: senderId=" + senderId + ", recipientId=" + recipientId + ", messageNode=" + messageNode.toPrettyString());
 
+                    String sessionId = generateSessionId(senderId, recipientId);
+
                     Prospect prospect = createOrUpdateProspect(senderId);
                     Message message = new Message();
                     message.setPlatform(Platform.FACEBOOK);
                     message.setSenderId(senderId);
                     message.setRecipientId(recipientId);
+                    message.setSessionId(sessionId);
                     message.setTimestamp(LocalDateTime.now());
 
                     String text = null;
@@ -122,10 +131,8 @@ public class FacebookMessageServiceImpl implements MessageService {
                     Optional<Customer> customer = findCustomerBySenderId(senderId);
                     customer.ifPresent(message::setCustomer);
 
-                    messageRepository.save(message);
-                    System.out.println("Facebook: Saved message: " + message.getMessageText());
-
-                    handleInteraction(message);
+                    rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.FACEBOOK_ROUTING_KEY, objectMapper.writeValueAsString(message));
+                    System.out.println("Facebook: Published message to RabbitMQ: " + message.getMessageText());
                 }
             }
         } catch (Exception e) {
@@ -133,6 +140,12 @@ public class FacebookMessageServiceImpl implements MessageService {
             e.printStackTrace();
             throw new IllegalArgumentException("Facebook: Failed to process payload: " + e.getMessage(), e);
         }
+    }
+
+    private String generateSessionId(String senderId, String recipientId) {
+        String id1 = senderId.compareTo(recipientId) < 0 ? senderId : recipientId;
+        String id2 = senderId.compareTo(recipientId) < 0 ? recipientId : senderId;
+        return Platform.FACEBOOK + ":" + id1 + ":" + id2;
     }
 
     private Prospect createOrUpdateProspect(String senderId) {
@@ -177,13 +190,9 @@ public class FacebookMessageServiceImpl implements MessageService {
         return prospect;
     }
 
-    private void handleInteraction(Message message) {
-        String responseText = "مرحبا! Bienvenue! Welcome! Thank you for your message. How can we assist you?";
-        sendMessage(message.getSenderId(), responseText, null, Platform.FACEBOOK.name());
-    }
-
     @Override
-    public void sendMessage(String recipientId, String messageText, String quickReplies, String platform) {
+    @Transactional
+    public void sendMessage(String recipientId, String messageText, String quickReplies, String platform, String sessionId) {
         if (!Platform.FACEBOOK.name().equalsIgnoreCase(platform)) {
             return;
         }
@@ -207,6 +216,16 @@ public class FacebookMessageServiceImpl implements MessageService {
                 System.out.println("Facebook: Meta API response: " + responseBody);
                 if (response.getStatusLine().getStatusCode() != 200) {
                     System.err.println("Facebook: Meta API error: " + responseBody);
+                } else {
+                    Message message = new Message();
+                    message.setPlatform(Platform.FACEBOOK);
+                    message.setSenderId("chatbot");
+                    message.setRecipientId(recipientId);
+                    message.setSessionId(sessionId);
+                    message.setMessageText(messageText);
+                    message.setTimestamp(LocalDateTime.now());
+                    messageRepository.save(message);
+                    System.out.println("Facebook: Saved chatbot response: " + messageText + ", sessionId=" + sessionId);
                 }
             }
         } catch (Exception e) {
@@ -236,6 +255,7 @@ public class FacebookMessageServiceImpl implements MessageService {
         dto.setPlatform(message.getPlatform());
         dto.setSenderId(message.getSenderId());
         dto.setRecipientId(message.getRecipientId());
+        dto.setSessionId(message.getSessionId());
         dto.setMessageText(message.getMessageText());
         dto.setButtonPayload(message.getButtonPayload());
         dto.setTimestamp(message.getTimestamp());
