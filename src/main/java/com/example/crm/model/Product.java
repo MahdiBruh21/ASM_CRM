@@ -17,7 +17,7 @@ public class Product {
     private String description;
 
     @Type(PGvectorType.class)
-    @Column(name = "rag_vector", columnDefinition = "vector(384)")
+    @Column(name = "rag_vector", columnDefinition = "vector(1536)")
     private PGvector ragVector;
 
     public Long getId() { return id; }

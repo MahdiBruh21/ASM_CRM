@@ -151,6 +151,6 @@ public class ProductServiceImpl implements ProductService {
 
     private float[] generateEmbedding(String text) {
         // Placeholder: Replace with actual embedding service (e.g., multilingual-e5-large)
-        return new float[384]; // Dummy embedding
+        return new float[1536]; // Dummy embedding
     }
 }
