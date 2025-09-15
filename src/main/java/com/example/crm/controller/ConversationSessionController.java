@@ -20,7 +20,8 @@ public class ConversationSessionController {
         return ResponseEntity.ok(service.getSessionById(sessionId));
     }
 
-    @PostMapping("/rag")
-    public ResponseEntity<ConversationSessionDTO> findSimilarSession(@RequestBody float[] queryVector) {
-        return ResponseEntity.ok(service.findNearestSession(queryVector));
-    }}
+//    @PostMapping("/rag")
+//    public ResponseEntity<ConversationSessionDTO> findSimilarSession(@RequestBody float[] queryVector) {
+//        return ResponseEntity.ok(service.findNearestSession(queryVector));
+//    }
+}

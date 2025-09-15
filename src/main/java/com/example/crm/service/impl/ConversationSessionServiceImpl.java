@@ -1,19 +1,23 @@
 package com.example.crm.service.impl;
 
 import com.example.crm.dto.ConversationSessionDTO;
-import com.example.crm.model.ConversationSession;
 import com.example.crm.model.Message;
+import com.example.crm.model.ConversationSession;
 import com.example.crm.repository.ConversationSessionRepository;
 import com.example.crm.service.interfaces.ConversationSessionService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.pgvector.PGvector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ConversationSessionServiceImpl implements ConversationSessionService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ConversationSessionServiceImpl.class);
 
     private final ConversationSessionRepository repository;
     private final ObjectMapper objectMapper;
@@ -24,10 +28,12 @@ public class ConversationSessionServiceImpl implements ConversationSessionServic
     }
 
     @Override
+    @Transactional
     public void processMessage(Message userMessage, Message chatbotMessage) {
+        logger.info("Processing message for sessionId: {}, userMessage: {}", userMessage.getSessionId(), userMessage.getMessageText());
+
         ConversationSession session = repository.findBySessionId(userMessage.getSessionId())
                 .orElse(new ConversationSession());
-
         session.setSessionId(userMessage.getSessionId());
 
         // Update history
@@ -65,29 +71,24 @@ public class ConversationSessionServiceImpl implements ConversationSessionServic
         String summary = generateSummary(historyArray);
         session.setSummary(summary);
 
-        // Generate embedding (placeholder)
-        float[] embedding = generateEmbedding(historyArray.toString());
-        session.setSessionVectorFromArray(embedding);
+        // Set is_rag_processed to false for user message
+        session.setIsRagProcessed(false);
 
         try {
-            repository.save(session);
+            ConversationSession savedSession = repository.save(session);
+            logger.info("Successfully saved session for sessionId: {}, id: {}, history: {}, is_rag_processed: {}",
+                    userMessage.getSessionId(), savedSession.getId(), historyArray, savedSession.isRagProcessed());
         } catch (Exception e) {
-            System.err.println("Error saving session: " + e.getMessage());
+            logger.error("Error saving session for sessionId: {}: {}", userMessage.getSessionId(), e.getMessage(), e);
             throw new RuntimeException("Failed to save session: " + e.getMessage(), e);
         }
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ConversationSessionDTO getSessionById(String sessionId) {
         ConversationSession session = repository.findBySessionId(sessionId)
                 .orElseThrow(() -> new RuntimeException("Session not found: " + sessionId));
-        return mapToDTO(session);
-    }
-
-    @Override
-    public ConversationSessionDTO findNearestSession(float[] queryVector) {
-        ConversationSession session = repository.findNearestNeighbor(new PGvector(queryVector))
-                .orElseThrow(() -> new RuntimeException("No similar session found"));
         return mapToDTO(session);
     }
 
@@ -97,23 +98,13 @@ public class ConversationSessionServiceImpl implements ConversationSessionServic
         dto.setSessionId(session.getSessionId());
         dto.setHistory(session.getHistory());
         dto.setSummary(session.getSummary());
-        try {
-            dto.setSessionVector(session.getSessionVector() != null ? session.getSessionVector().toArray() : null);
-        } catch (Exception e) {
-            System.err.println("Error converting PGvector to array: " + e.getMessage());
-            dto.setSessionVector(null);
-        }
         dto.setClientInfo(session.getClientInfo());
+        dto.setIsRagProcessed(session.isRagProcessed());
         return dto;
     }
 
     private String generateSummary(ArrayNode history) {
-        // Placeholder: Call external summarization model (e.g., OpenAI)
+        // Placeholder: Call external summarization model
         return "Summary of conversation for session: User and chatbot discussed issues.";
-    }
-
-    private float[] generateEmbedding(String text) {
-        // Placeholder: Return null until actual embedding service is integrated
-        return null; // Replace with actual embedding logic (e.g., OpenAI API)
     }
 }

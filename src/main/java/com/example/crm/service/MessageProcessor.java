@@ -8,14 +8,20 @@ import com.example.crm.service.interfaces.ConversationSessionService;
 import com.example.crm.service.interfaces.MessageService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import com.rabbitmq.client.Channel;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
 @Component
 public class MessageProcessor {
+
+    private static final Logger logger = LoggerFactory.getLogger(MessageProcessor.class);
 
     private final MessageService facebookMessageService;
     private final MessageService instagramMessageService;
@@ -39,31 +45,44 @@ public class MessageProcessor {
         this.objectMapper = objectMapper;
     }
 
-    @RabbitListener(queues = "facebook-message-queue")
-    public void processFacebookMessage(String messageJson) throws Exception {
-        processMessage(messageJson, Platform.FACEBOOK, facebookMessageService);
+    @RabbitListener(queues = "facebook-message-queue", ackMode = "MANUAL")
+    public void processFacebookMessage(String messageJson, Channel channel, org.springframework.amqp.core.Message amqpMessage) throws Exception {
+        processMessage(messageJson, Platform.FACEBOOK, facebookMessageService, channel, amqpMessage);
     }
 
-    @RabbitListener(queues = "instagram-message-queue")
-    public void processInstagramMessage(String messageJson) throws Exception {
-        processMessage(messageJson, Platform.INSTAGRAM, instagramMessageService);
+    @RabbitListener(queues = "instagram-message-queue", ackMode = "MANUAL")
+    public void processInstagramMessage(String messageJson, Channel channel, org.springframework.amqp.core.Message amqpMessage) throws Exception {
+        processMessage(messageJson, Platform.INSTAGRAM, instagramMessageService, channel, amqpMessage);
     }
 
-    @RabbitListener(queues = "whatsapp-message-queue")
-    public void processWhatsAppMessage(String messageJson) throws Exception {
-        processMessage(messageJson, Platform.WHATSAPP, whatsappMessageService);
+    @RabbitListener(queues = "whatsapp-message-queue", ackMode = "MANUAL")
+    public void processWhatsAppMessage(String messageJson, Channel channel, org.springframework.amqp.core.Message amqpMessage) throws Exception {
+        processMessage(messageJson, Platform.WHATSAPP, whatsappMessageService, channel, amqpMessage);
     }
 
-    private void processMessage(String messageJson, Platform platform, MessageService messageService) throws Exception {
+    @Transactional
+    protected void processMessage(String messageJson, Platform platform, MessageService messageService, Channel channel, org.springframework.amqp.core.Message amqpMessage) throws Exception {
+        long deliveryTag = amqpMessage.getMessageProperties().getDeliveryTag();
+        String sessionId = "unknown";
         try {
             JsonNode jsonNode = objectMapper.readTree(messageJson);
             String senderId = jsonNode.get("senderId").asText();
             String recipientId = jsonNode.get("recipientId").asText();
             String messageText = jsonNode.get("messageText").asText();
-            String sessionId = jsonNode.get("sessionId").asText();
+            sessionId = jsonNode.get("sessionId").asText();
 
-            System.out.println(platform + ": Processing message from queue: " + messageText);
+            logger.info("{}: Processing message from queue: {}, sessionId: {}, deliveryTag: {}", platform, messageText, sessionId, deliveryTag);
 
+            // Check for duplicate message
+            Message existingMessage = messageRepository.findTopBySessionIdAndSenderIdAndMessageTextOrderByTimestampDesc(
+                    sessionId, senderId, messageText);
+            if (existingMessage != null) {
+                logger.info("{}: Duplicate message detected, skipping: {}, sessionId: {}, deliveryTag: {}", platform, messageText, sessionId, deliveryTag);
+                channel.basicAck(deliveryTag, false);
+                return;
+            }
+
+            // Save user message
             Message userMessage = new Message();
             userMessage.setPlatform(platform);
             userMessage.setSenderId(senderId);
@@ -72,48 +91,38 @@ public class MessageProcessor {
             userMessage.setMessageText(messageText);
             userMessage.setTimestamp(LocalDateTime.now());
             messageRepository.save(userMessage);
+            logger.info("{}: Saved user message to message table, sessionId: {}", platform, sessionId);
 
-            String chatbotResponse = getLastChatbotMessage(sessionId);
-            if (chatbotResponse == null) {
-                chatbotResponse = "مرحبا! Bienvenue! Welcome! This is a placeholder response from " + platform;
+            // Log session state before update
+            try {
+                ConversationSessionDTO sessionBefore = conversationSessionService.getSessionById(sessionId);
+                logger.info("{}: Session before update, sessionId: {}, id: {}, history: {}, is_rag_processed: {}",
+                        platform, sessionId, sessionBefore.getId(), sessionBefore.getHistory(), sessionBefore.isRagProcessed());
+            } catch (Exception e) {
+                logger.warn("{}: Session not found before update, sessionId: {}", platform, sessionId);
             }
 
-            messageService.sendMessage(senderId, chatbotResponse, null, platform.name(), sessionId);
+            // Update conversation session (triggers RAG pipeline)
+            conversationSessionService.processMessage(userMessage, null);
+            logger.info("{}: Updated conversation session, waiting for RAG pipeline response, sessionId: {}, deliveryTag: {}", platform, sessionId, deliveryTag);
 
-            Message chatbotMessage = new Message();
-            chatbotMessage.setPlatform(platform);
-            chatbotMessage.setSenderId(recipientId); // Chatbot as sender
-            chatbotMessage.setRecipientId(senderId); // User as recipient
-            chatbotMessage.setSessionId(sessionId);
-            chatbotMessage.setMessageText(chatbotResponse);
-            chatbotMessage.setTimestamp(LocalDateTime.now());
-            messageRepository.save(chatbotMessage);
-
-            conversationSessionService.processMessage(userMessage, chatbotMessage);
-
-            System.out.println(platform + ": Sent response: " + chatbotResponse);
-        } catch (Exception e) {
-            System.err.println(platform + ": Error processing message: " + e.getMessage());
-            throw e; // Re-throw to allow RabbitMQ retry/DLQ handling
-        }
-    }
-
-    private String getLastChatbotMessage(String sessionId) {
-        try {
-            ConversationSessionDTO session = conversationSessionService.getSessionById(sessionId);
-            JsonNode history = session.getHistory();
-            if (history != null && history.isArray()) {
-                for (int i = history.size() - 1; i >= 0; i--) {
-                    JsonNode messageNode = history.get(i);
-                    if (messageNode.has("role") && "chatbot".equals(messageNode.get("role").asText())) {
-                        return messageNode.get("content").asText();
-                    }
-                }
+            // Log session state after update
+            try {
+                ConversationSessionDTO sessionAfter = conversationSessionService.getSessionById(sessionId);
+                logger.info("{}: Session after update, sessionId: {}, id: {}, history: {}, is_rag_processed: {}",
+                        platform, sessionId, sessionAfter.getId(), sessionAfter.getHistory(), sessionAfter.isRagProcessed());
+            } catch (Exception e) {
+                logger.error("{}: Failed to fetch session after update, sessionId: {}, error: {}", platform, sessionId, e.getMessage());
             }
-            return null;
+
+            // Acknowledge message
+            channel.basicAck(deliveryTag, false);
+            logger.info("{}: Acknowledged message, sessionId: {}, deliveryTag: {}", platform, sessionId, deliveryTag);
         } catch (Exception e) {
-            System.err.println("Error fetching last chatbot message for session " + sessionId + ": " + e.getMessage());
-            return null;
+            logger.error("{}: Error processing message: {}, sessionId: {}, deliveryTag: {}", platform, e.getMessage(), sessionId, deliveryTag, e);
+            // Reject message without requeueing
+            channel.basicNack(deliveryTag, false, false);
+            logger.info("{}: Rejected message without requeue, sessionId: {}, deliveryTag: {}", platform, sessionId, deliveryTag);
         }
     }
 }

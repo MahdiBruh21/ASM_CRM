@@ -16,6 +16,7 @@ public class Message {
     private String senderId;
     private String recipientId;
     private String sessionId; // New field for bidirectional session ID
+    @Column(length = 2000)
     private String messageText;
     private String buttonPayload;
     private LocalDateTime timestamp;

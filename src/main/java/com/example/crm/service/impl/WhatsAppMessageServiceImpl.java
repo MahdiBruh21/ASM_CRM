@@ -1,4 +1,4 @@
-        package com.example.crm.service.impl;
+package com.example.crm.service.impl;
 
 import com.example.crm.config.RabbitMQConfig;
 import com.example.crm.dto.CustomerDTO;
@@ -12,19 +12,19 @@ import com.example.crm.enums.ProspectStatus;
 import com.example.crm.enums.ProspectionType;
 import com.example.crm.repository.CustomerRepository;
 import com.example.crm.repository.MessageRepository;
-import com.example.crm.repository.ProspectRepository;
 import com.example.crm.repository.ProspectProfileRepository;
+import com.example.crm.repository.ProspectRepository;
 import com.example.crm.service.interfaces.MessageService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,89 +75,71 @@ public class WhatsAppMessageServiceImpl implements MessageService {
             return;
         }
         try {
-            System.out.println("WhatsApp: Processing payload: " + payload);
             JsonNode rootNode = objectMapper.readTree(payload);
-            System.out.println("WhatsApp: Parsed JSON structure: " + rootNode.toPrettyString());
-
             JsonNode entries = rootNode.path("entry");
             if (entries.isEmpty()) {
-                System.out.println("WhatsApp: No entries found in payload: " + payload);
+                System.out.println("WhatsApp: No entries found in payload");
                 return;
             }
 
             for (JsonNode entry : entries) {
-                System.out.println("WhatsApp: Processing entry: " + entry.toPrettyString());
                 JsonNode changes = entry.path("changes");
-                if (changes.isEmpty()) {
-                    System.out.println("WhatsApp: No changes field found in entry: " + entry.toPrettyString());
-                    continue;
-                }
+                if (changes.isEmpty()) continue;
+
                 for (JsonNode change : changes) {
-                    System.out.println("WhatsApp: Processing change: " + change.toPrettyString());
                     JsonNode valueNode = change.path("value");
-                    if (!valueNode.has("messages") || !valueNode.has("metadata")) {
-                        System.out.println("WhatsApp: Invalid payload structure: " + valueNode.toPrettyString());
-                        continue;
-                    }
+                    if (!valueNode.has("messages") || !valueNode.has("metadata")) continue;
 
                     JsonNode messages = valueNode.path("messages");
-                    if (messages.isEmpty()) {
-                        System.out.println("WhatsApp: No messages found in value: " + valueNode.toPrettyString());
-                        continue;
-                    }
+                    if (messages.isEmpty()) continue;
 
-                    String recipientId = valueNode.path("metadata").path("phone_number_id").asText("");
-                    if (recipientId.isEmpty()) {
-                        System.out.println("WhatsApp: Missing phone_number_id in metadata: " + valueNode.toPrettyString());
+                    // Bot identifier (your phone number id)
+                    String businessNumberId = valueNode.path("metadata").path("phone_number_id").asText("");
+                    if (businessNumberId.isEmpty()) {
+                        System.err.println("WhatsApp: missing phone_number_id in metadata");
                         continue;
                     }
 
                     for (JsonNode messageNode : messages) {
-                        String senderId = messageNode.path("from").asText("");
-                        if (senderId.isEmpty()) {
-                            System.out.println("WhatsApp: Missing senderId: " + messageNode.toPrettyString());
-                            continue;
-                        }
+                        String userPhone = messageNode.path("from").asText("");
+                        if (userPhone.isEmpty()) continue;
 
                         boolean isEcho = messageNode.path("context").has("from");
                         if (isEcho) {
-                            System.out.println("WhatsApp: Skipping echo message from senderId=" + senderId);
+                            System.out.println("WhatsApp: Skipping echo message from " + userPhone);
                             continue;
                         }
 
-                        System.out.println("WhatsApp: Processing message: senderId=" + senderId + ", recipientId=" + recipientId + ", messageNode=" + messageNode.toPrettyString());
+                        String sessionId = generateSessionId(userPhone, businessNumberId);
 
-                        String sessionId = generateSessionId(senderId, recipientId);
-
-                        Prospect prospect = createOrUpdateProspect(senderId, valueNode);
+                        Prospect prospect = createOrUpdateProspect(userPhone, valueNode);
                         Message message = new Message();
                         message.setPlatform(Platform.WHATSAPP);
-                        message.setSenderId(senderId);
-                        message.setRecipientId(recipientId);
+                        message.setSenderId(userPhone);           // user sending
+                        message.setRecipientId(businessNumberId); // our bot phone id
                         message.setSessionId(sessionId);
                         message.setTimestamp(LocalDateTime.now());
 
                         String text = messageNode.path("text").path("body").asText(null);
                         if (text != null && !text.isEmpty()) {
                             message.setMessageText(text);
-                            System.out.println("WhatsApp: Text message received: " + text);
                         } else {
                             message.setMessageText("No text content");
-                            System.out.println("WhatsApp: No text content: " + messageNode.toPrettyString());
                         }
 
-                        Optional<Customer> customer = findCustomerBySenderId(senderId);
+                        Optional<Customer> customer = findCustomerBySenderId(userPhone);
                         customer.ifPresent(message::setCustomer);
 
-                        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.WHATSAPP_ROUTING_KEY, objectMapper.writeValueAsString(message));
-                        System.out.println("WhatsApp: Published message to RabbitMQ: " + message.getMessageText());
+                        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME,
+                                RabbitMQConfig.WHATSAPP_ROUTING_KEY,
+                                objectMapper.writeValueAsString(message));
+                        System.out.println("WhatsApp: Published message from user=" + userPhone + " to RabbitMQ");
                     }
                 }
             }
         } catch (Exception e) {
             System.err.println("WhatsApp: Failed to process payload: " + e.getMessage());
-            e.printStackTrace();
-            throw new IllegalArgumentException("WhatsApp: Failed to process payload: " + e.getMessage(), e);
+            throw new IllegalArgumentException("WhatsApp: Failed to process payload", e);
         }
     }
 
@@ -195,59 +177,74 @@ public class WhatsAppMessageServiceImpl implements MessageService {
         profile.setProspect(prospect);
         prospectProfileRepository.save(profile);
 
-        System.out.println("WhatsApp: Created Prospect: " + name + ", Sender ID: " + senderId);
         return prospect;
     }
 
+    // --- FIXED sendMessage: build proper JSON, use Authorization header, use ContentType.APPLICATION_JSON
     @Override
     @Transactional
     public void sendMessage(String recipientId, String messageText, String quickReplies, String platform, String sessionId) {
-        if (!Platform.WHATSAPP.name().equalsIgnoreCase(platform)) {
-            return;
-        }
+        if (!Platform.WHATSAPP.name().equalsIgnoreCase(platform)) return;
+
         try {
-            String endpoint = String.format("https://graph.facebook.com/%s/%s/messages?access_token=%s",
-                    metaApiVersion, phoneNumberId, whatsappAccessToken);
+            // Normalize recipient phone (WhatsApp expects international digits only)
+            String to = normalizePhone(recipientId);
+            if (to.isEmpty()) {
+                System.err.println("WhatsApp: invalid recipient phone: " + recipientId);
+                return;
+            }
+
+            // Endpoint: https://graph.facebook.com/{apiVersion}/{phoneNumberId}/messages
+            String endpoint = String.format("https://graph.facebook.com/%s/%s/messages",
+                    metaApiVersion, phoneNumberId);
+
+            // Build JSON using ObjectMapper (avoid escaping issues)
+            JsonNode bodyNode = objectMapper.createObjectNode()
+                    .put("messaging_product", "whatsapp")
+                    .put("to", to)
+                    .put("recipient_type", "individual")
+                    .put("type", "text")
+                    .set("text", objectMapper.createObjectNode().put("body", messageText));
+
+            String jsonBody = objectMapper.writeValueAsString(bodyNode);
+
             HttpPost request = new HttpPost(endpoint);
-            request.setHeader("Content-Type", "application/json; charset=UTF-8");
+            // Use Authorization header instead of access_token in URL
+            request.setHeader("Authorization", "Bearer " + whatsappAccessToken);
 
-            String jsonBody = """
-                    {
-                        "messaging_product": "whatsapp",
-                        "recipient_type": "individual",
-                        "to": "%s",
-                        "type": "text",
-                        "text": {
-                            "body": "%s"
-                        }
-                    }
-                    """.formatted(recipientId, messageText.replace("\"", "\\\""));
-            request.setEntity(new StringEntity(jsonBody, StandardCharsets.UTF_8));
+            // Ensure entity has application/json content type
+            StringEntity entity = new StringEntity(jsonBody, ContentType.APPLICATION_JSON);
+            request.setEntity(entity);
 
-            System.out.println("WhatsApp: Sending Meta API request to recipientId=" + recipientId + ": " + jsonBody);
-            System.out.println("WhatsApp: Using access token (redacted): " + whatsappAccessToken.substring(0, 10) + "...");
+            System.out.println("WhatsApp: Sending API request to " + endpoint + " payload: " + jsonBody.replaceAll("\\n",""));
             try (CloseableHttpResponse response = httpClient.execute(request)) {
                 int statusCode = response.getStatusLine().getStatusCode();
-                String responseBody = EntityUtils.toString(response.getEntity());
-                System.out.println("WhatsApp: Meta API response (status " + statusCode + "): " + responseBody);
-                if (statusCode != 200) {
-                    System.err.println("WhatsApp: Meta API error for recipientId=" + recipientId + ": " + responseBody);
-                } else {
+                String responseBody = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+                System.out.println("WhatsApp API response (" + statusCode + "): " + responseBody);
+
+                if (statusCode >= 200 && statusCode < 300) {
                     Message message = new Message();
                     message.setPlatform(Platform.WHATSAPP);
                     message.setSenderId("chatbot");
-                    message.setRecipientId(recipientId);
+                    message.setRecipientId(to); // user number (normalized)
                     message.setSessionId(sessionId);
                     message.setMessageText(messageText);
                     message.setTimestamp(LocalDateTime.now());
                     messageRepository.save(message);
-                    System.out.println("WhatsApp: Saved chatbot response: " + messageText + ", sessionId=" + sessionId);
+                } else {
+                    System.err.println("WhatsApp: Error sending to " + to + ": " + responseBody);
                 }
             }
         } catch (Exception e) {
-            System.err.println("WhatsApp: Failed to send message to recipientId=" + recipientId + ": " + e.getMessage());
+            System.err.println("WhatsApp: Failed to send message: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    private String normalizePhone(String phone) {
+        if (phone == null) return "";
+        // Remove any non-digit characters (keeps country code)
+        return phone.replaceAll("\\D", "");
     }
 
     @Override

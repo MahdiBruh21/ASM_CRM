@@ -17,6 +17,7 @@ import com.example.crm.repository.ProspectProfileRepository;
 import com.example.crm.service.interfaces.MessageService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -233,46 +234,65 @@ public class InstagramMessageServiceImpl implements MessageService {
         if (!Platform.INSTAGRAM.name().equalsIgnoreCase(platform)) {
             return;
         }
+
         try {
-            String endpoint = String.format("https://graph.instagram.com/%s/me/messages?access_token=%s",
-                    metaApiVersion, instagramAccessToken);
+            if (recipientId == null || recipientId.trim().isEmpty()) {
+                System.err.println("Instagram: ❌ recipientId is null or empty, cannot send message");
+                return;
+            }
+
+            String endpoint = String.format(
+                    "https://graph.facebook.com/%s/me/messages?access_token=%s",
+                    metaApiVersion,
+                    pageAccessToken // IMPORTANT: must use page token
+            );
+
             HttpPost request = new HttpPost(endpoint);
             request.setHeader("Content-Type", "application/json; charset=UTF-8");
 
-            String jsonBody = """
-                    {
-                        "recipient": {"id": "%s"},
-                        "message": {"text": "%s"},
-                        "messaging_type": "RESPONSE"
-                    }
-                    """.formatted(recipientId, messageText.replace("\"", "\\\""));
+            // Build JSON safely
+            ObjectNode body = new ObjectMapper().createObjectNode();
+            ObjectNode recipientNode = body.putObject("recipient");
+            recipientNode.put("id", recipientId);
+
+            ObjectNode messageNode = body.putObject("message");
+            messageNode.put("text", messageText);
+
+            body.put("messaging_type", "RESPONSE");
+
+            String jsonBody = new ObjectMapper().writeValueAsString(body);
             request.setEntity(new StringEntity(jsonBody, StandardCharsets.UTF_8));
 
-            System.out.println("Instagram: Sending Meta API request to recipientId=" + recipientId + ": " + jsonBody);
-            System.out.println("Instagram: Using access token (redacted): " + instagramAccessToken.substring(0, 10) + "...");
+            System.out.println("Instagram: Sending message to recipientId=" + recipientId + ": " + jsonBody);
+
             try (CloseableHttpResponse response = httpClient.execute(request)) {
                 int statusCode = response.getStatusLine().getStatusCode();
                 String responseBody = EntityUtils.toString(response.getEntity());
                 System.out.println("Instagram: Meta API response (status " + statusCode + "): " + responseBody);
-                if (statusCode != 200) {
-                    System.err.println("Instagram: Meta API error for recipientId=" + recipientId + ": " + responseBody);
+
+                if (statusCode == 200) {
+                    Message botMessage = new Message();
+                    botMessage.setPlatform(Platform.INSTAGRAM);
+                    botMessage.setSenderId("chatbot");
+                    botMessage.setRecipientId(recipientId);
+                    botMessage.setSessionId(sessionId);
+                    botMessage.setMessageText(messageText);
+                    botMessage.setTimestamp(LocalDateTime.now());
+                    messageRepository.save(botMessage);
+                    System.out.println("Instagram: ✅ Saved chatbot response for sessionId=" + sessionId);
                 } else {
-                    Message message = new Message();
-                    message.setPlatform(Platform.INSTAGRAM);
-                    message.setSenderId("chatbot");
-                    message.setRecipientId(recipientId);
-                    message.setSessionId(sessionId);
-                    message.setMessageText(messageText);
-                    message.setTimestamp(LocalDateTime.now());
-                    messageRepository.save(message);
-                    System.out.println("Instagram: Saved chatbot response: " + messageText + ", sessionId=" + sessionId);
+                    System.err.println("Instagram: ❌ Meta API error for recipientId=" + recipientId + ": " + responseBody);
                 }
             }
+
         } catch (Exception e) {
-            System.err.println("Instagram: Failed to send message to recipientId=" + recipientId + ": " + e.getMessage());
+            System.err.println("Instagram: Failed to send message: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
+
+
 
     @Override
     @Transactional(readOnly = true)

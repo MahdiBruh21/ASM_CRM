@@ -5,9 +5,23 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="013998f9-a585-4d20-a363-e2796dd980b2" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/service/ConversationNotificationListener.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/model/Product.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/model/Product.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/ProductServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/ProductServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/controller/ConversationSessionController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/controller/ConversationSessionController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/dto/ConversationSessionDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/dto/ConversationSessionDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/model/ConversationSession.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/model/ConversationSession.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/model/Message.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/model/Message.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/repository/MessageRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/repository/MessageRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/service/MessageProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/service/MessageProcessor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/ConversationSessionServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/ConversationSessionServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/FacebookMessageServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/FacebookMessageServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/InstagramMessageServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/InstagramMessageServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/WhatsAppMessageServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/service/impl/WhatsAppMessageServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/crm/service/interfaces/ConversationSessionService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/crm/service/interfaces/ConversationSessionService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/model/Message.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/model/Message.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/crm/repository/MessageRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/crm/repository/MessageRepository.class" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
